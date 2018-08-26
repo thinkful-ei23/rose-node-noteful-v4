@@ -28,12 +28,14 @@ describe('Noteful API - Login', function () {
 
   beforeEach(function () {
     return User.hashPassword(password)
-      .then(digest => User.create({
-        _id,
-        fullname,
-        username,
-        password: digest
-      }));
+      .then(digest => 
+        User.create({
+          _id,
+          fullname,
+          username,
+          password: digest
+        })
+      );
   });
 
   afterEach(function () {
@@ -128,7 +130,10 @@ describe('Noteful API - Login', function () {
     });
 
     it('should reject requests with an expired token', function () {
-      token = jwt.sign({ username, password, fullname }, JWT_SECRET, { subject: username, expiresIn: Math.floor(Date.now() / 1000) - 10 });
+      token = jwt.sign({ username, password, fullname }, JWT_SECRET, { 
+        subject: username, 
+        expiresIn: Math.floor(Date.now() / 1000) - 10 
+      });
       return chai.request(app)
         .post('/api/refresh')
         .set('Authorization', `Bearer ${token}`)
@@ -139,7 +144,10 @@ describe('Noteful API - Login', function () {
 
     it('should return a valid auth token with a newer expiry date', function () {
       const user = { username, fullname };
-      const token = jwt.sign({ user }, JWT_SECRET, { subject: username, expiresIn: '1m' });
+      const token = jwt.sign({ user }, JWT_SECRET, { 
+        subject: username, 
+        expiresIn: '1m' 
+      });
       const decoded = jwt.decode(token);
 
       return chai.request(app)
@@ -147,7 +155,7 @@ describe('Noteful API - Login', function () {
         .set('Authorization', `Bearer ${token}`)
         .then(res => {
           expect(res).to.have.status(200);
-          expect(res.body).to.been.a('object');
+          expect(res.body).to.be.an('object');
           const authToken = res.body.authToken;
           expect(authToken).to.be.a('string');
 

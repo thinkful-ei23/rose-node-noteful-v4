@@ -61,7 +61,7 @@ describe('Noteful API - Notes', function () {
 
     it('should return the correct number of Notes', function () {
       return Promise.all([
-        Note.find(),
+        Note.find({ userId: user.id }),
         chai.request(app)
           .get('/api/notes')
           .set('Authorization', `Bearer ${token}`)
@@ -69,14 +69,14 @@ describe('Noteful API - Notes', function () {
         .then(([data, res]) => {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          expect(res.body).to.be.a('array');
+          expect(res.body).to.be.an('array');
           expect(res.body).to.have.length(data.length);
         });
     });
 
     it('should return a list sorted desc with the correct right fields', function () {
       return Promise.all([
-        Note.find().sort({ updatedAt: 'desc' }),
+        Note.find({ userId: user.id }).sort({ updatedAt: 'desc' }),
         chai.request(app)
           .get('/api/notes')
           .set('Authorization', `Bearer ${token}`)
@@ -84,12 +84,12 @@ describe('Noteful API - Notes', function () {
         .then(([data, res]) => {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          expect(res.body).to.be.a('array');
+          expect(res.body).to.be.an('array');
           expect(res.body).to.have.length(data.length);
           res.body.forEach(function (item, i) {
-            expect(item).to.be.a('object');
+            expect(item).to.be.an('object');
             // Note: folderId, tags and content are optional
-            expect(item).to.include.all.keys('id', 'title', 'createdAt', 'updatedAt', 'tags');
+            expect(item).to.include.all.keys('id', 'title', 'createdAt', 'updatedAt', 'userId');
             expect(item.id).to.equal(data[i].id);
             expect(item.title).to.equal(data[i].title);
             expect(item.content).to.equal(data[i].content);
@@ -115,10 +115,10 @@ describe('Noteful API - Notes', function () {
         .then(([data, res]) => {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          expect(res.body).to.be.a('array');
+          expect(res.body).to.be.an('array');
           expect(res.body).to.have.length(data.length);
           res.body.forEach(function (item, i) {
-            expect(item).to.be.a('object');
+            expect(item).to.be.an('object');
             expect(item).to.include.all.keys('id', 'title', 'createdAt', 'updatedAt', 'tags'); // Note: folderId and content are optional
             expect(item.id).to.equal(data[i].id);
             expect(item.title).to.equal(data[i].title);
@@ -130,7 +130,7 @@ describe('Noteful API - Notes', function () {
     });
 
     it('should return correct search results for content search', function () {
-      const searchTerm = 'lorem ipsum';
+      const searchTerm = 'lady gaga';
       const re = new RegExp(searchTerm, 'i');
       const dbPromise = Note
         .find({ $or: [{ title: re }, { content: re }] })
@@ -144,7 +144,8 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
-          expect(res.body).to.have.length(data.length);
+          expect(res.body).to.have.length(data.length); 
+         
           res.body.forEach(function (item, i) {
             expect(item).to.be.a('object');
             expect(item).to.include.all.keys('id', 'title', 'createdAt', 'updatedAt', 'tags'); // Note: folderId and content are optional
@@ -314,7 +315,7 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.header('location');
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'tags');
+          expect(res.body).to.have.all.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'tags', 'userId');
           return Note.findById(res.body.id);
         })
         .then(data => {
@@ -341,7 +342,7 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.header('location');
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('id', 'title', 'createdAt', 'updatedAt', 'tags');
+          expect(res.body).to.have.all.keys('id', 'title', 'createdAt', 'updatedAt', 'tags', 'userId');
           return Note.findOne({ _id: res.body.id });
         })
         .then(data => {
@@ -397,7 +398,7 @@ describe('Noteful API - Notes', function () {
         });
     });
 
-    it('should return an error when "title" is empty string', function () {
+    it('should return an error when `title` is empty string', function () {
       const newItem = { title: '' };
       return chai.request(app)
         .post('/api/notes')
@@ -425,7 +426,7 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body.message).to.equal('The `folderId` is not valid');
+          expect(res.body.message).to.equal('The folder `id` is not valid');
         });
     });
 
@@ -588,7 +589,7 @@ describe('Noteful API - Notes', function () {
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
           expect(res.body.folderId).to.equal(data.folderId);
-          expect(res.body.tags).to.deep.equal(updateItem.tags);
+          expect(res.body.tags[0].id).to.eql(updateItem.tags[0]); 
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           // expect note to have been updated
           expect(new Date(res.body.updatedAt)).to.greaterThan(data.updatedAt);
@@ -625,7 +626,7 @@ describe('Noteful API - Notes', function () {
         });
     });
 
-    it('should return an error when "title" is an empty string', function () {
+    it('should return an error when `title` is an empty string', function () {
       const updateItem = { title: '' };
       let data;
       return Note.findOne()
@@ -659,7 +660,7 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body.message).to.equal('The `folderId` is not valid');
+          expect(res.body.message).to.equal('The folder `id` is not valid');
         });
     });
 
